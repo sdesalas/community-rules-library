@@ -1,0 +1,65 @@
+id: "1e2aebd3-c72e-51a3-9f11-de8f0529c2d0_1"
+type: security-rule
+attributes:
+  author:
+    - Elastic Community
+  description: Identifies a GuardDuty detector being deleted, which stops threat detection in that region.
+  from: now-9m
+  index:
+    - "filebeat-*"
+    - "logs-aws.cloudtrail-*"
+  language: kuery
+  license: Elastic License v2
+  name: AWS GuardDuty Detector Deleted
+  note: |
+    ## Triage and analysis
+
+    ### Investigating AWS GuardDuty Detector Deleted
+
+    ### Possible investigation steps
+
+    - Recreate the detector.
+    - Review what the account did in the region afterwards.
+
+    ### False positive analysis
+
+    - Region clean-ups. Confirm with the account owner.
+  query: |
+    event.dataset:aws.cloudtrail and event.provider:guardduty.amazonaws.com and
+      event.action:(DeleteDetector or DisassociateFromMasterAccount or DisassociateFromAdministratorAccount) and event.outcome:success
+  related_integrations:
+    - integration: cloudtrail
+      package: aws
+      version: ">=2.0.0"
+  risk_score: 73
+  rule_id: "1e2aebd3-c72e-51a3-9f11-de8f0529c2d0"
+  setup: |
+    ## Setup
+
+    This rule requires the AWS CloudTrail integration to be installed and collecting logs, with Amazon Bedrock API calls recorded in the trail.
+  severity: high
+  tags:
+    - "Domain: Cloud"
+    - "Use Case: Threat Detection"
+    - "Tactic: Defense Evasion"
+    - "Data Source: AWS"
+    - "Data Source: AWS CloudTrail"
+    - "Resources: Investigation Guide"
+    - "Source: Community"
+  threat:
+    - framework: MITRE ATT&CK
+      tactic:
+        id: TA0005
+        name: Defense Evasion
+        reference: "https://attack.mitre.org/tactics/TA0005/"
+      technique:
+        - id: T1562
+          name: Impair Defenses
+          reference: "https://attack.mitre.org/techniques/T1562/"
+          subtechnique:
+            - id: T1562.001
+              name: Disable or Modify Tools
+              reference: "https://attack.mitre.org/techniques/T1562/001/"
+  timestamp_override: event.ingested
+  type: query
+  version: 1

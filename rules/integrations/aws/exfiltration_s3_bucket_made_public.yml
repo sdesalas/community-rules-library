@@ -1,0 +1,62 @@
+id: "75d57561-80b0-5cb0-8881-247fdba62b30_1"
+type: security-rule
+attributes:
+  author:
+    - Elastic Community
+  description: Identifies a bucket policy or ACL change that grants access to everyone.
+  from: now-9m
+  index:
+    - "filebeat-*"
+    - "logs-aws.cloudtrail-*"
+  language: kuery
+  license: Elastic License v2
+  name: AWS S3 Bucket Policy or ACL Made Public
+  note: |
+    ## Triage and analysis
+
+    ### Investigating AWS S3 Bucket Policy or ACL Made Public
+
+    ### Possible investigation steps
+
+    - Check the bucket's contents and its Block Public Access settings.
+    - Revert the change if it was not approved.
+
+    ### False positive analysis
+
+    - Buckets that host public websites. Exclude them by bucket name.
+  query: |
+    event.dataset:aws.cloudtrail and event.provider:s3.amazonaws.com and
+      event.action:(PutBucketPolicy or PutBucketAcl) and event.outcome:success and
+      aws.cloudtrail.request_parameters:(*AllUsers* or *AuthenticatedUsers* or *Principal=\*\** or *public-read*)
+  related_integrations:
+    - integration: cloudtrail
+      package: aws
+      version: ">=2.0.0"
+  risk_score: 73
+  rule_id: "75d57561-80b0-5cb0-8881-247fdba62b30"
+  setup: |
+    ## Setup
+
+    This rule requires the AWS CloudTrail integration to be installed and collecting logs, with Amazon Bedrock API calls recorded in the trail.
+  severity: high
+  tags:
+    - "Domain: Cloud"
+    - "Use Case: Threat Detection"
+    - "Tactic: Exfiltration"
+    - "Data Source: AWS"
+    - "Data Source: AWS CloudTrail"
+    - "Resources: Investigation Guide"
+    - "Source: Community"
+  threat:
+    - framework: MITRE ATT&CK
+      tactic:
+        id: TA0010
+        name: Exfiltration
+        reference: "https://attack.mitre.org/tactics/TA0010/"
+      technique:
+        - id: T1537
+          name: Transfer Data to Cloud Account
+          reference: "https://attack.mitre.org/techniques/T1537/"
+  timestamp_override: event.ingested
+  type: query
+  version: 1

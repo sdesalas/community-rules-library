@@ -1,0 +1,65 @@
+id: "4b0c3df9-4d51-5005-bec3-e7e1f714b7f2_1"
+type: security-rule
+attributes:
+  author:
+    - Elastic Community
+  description: Identifies a successful console login with the root user. The root user should be locked away and almost never used.
+  from: now-9m
+  index:
+    - "filebeat-*"
+    - "logs-aws.cloudtrail-*"
+  language: kuery
+  license: Elastic License v2
+  name: AWS Root Account Console Login
+  note: |
+    ## Triage and analysis
+
+    ### Investigating AWS Root Account Console Login
+
+    ### Possible investigation steps
+
+    - Confirm with the account owner who logged in.
+    - Review everything done in the session.
+
+    ### False positive analysis
+
+    - Rare account tasks need root. Confirm with the account owner.
+  query: |
+    event.dataset:aws.cloudtrail and event.provider:signin.amazonaws.com and event.action:ConsoleLogin and
+      aws.cloudtrail.user_identity.type:Root and event.outcome:success
+  related_integrations:
+    - integration: cloudtrail
+      package: aws
+      version: ">=2.0.0"
+  risk_score: 73
+  rule_id: "4b0c3df9-4d51-5005-bec3-e7e1f714b7f2"
+  setup: |
+    ## Setup
+
+    This rule requires the AWS CloudTrail integration to be installed and collecting logs, with Amazon Bedrock API calls recorded in the trail.
+  severity: high
+  tags:
+    - "Domain: Cloud"
+    - "Use Case: Threat Detection"
+    - "Tactic: Initial Access"
+    - "Data Source: AWS"
+    - "Data Source: AWS CloudTrail"
+    - "Resources: Investigation Guide"
+    - "Source: Community"
+  threat:
+    - framework: MITRE ATT&CK
+      tactic:
+        id: TA0001
+        name: Initial Access
+        reference: "https://attack.mitre.org/tactics/TA0001/"
+      technique:
+        - id: T1078
+          name: Valid Accounts
+          reference: "https://attack.mitre.org/techniques/T1078/"
+          subtechnique:
+            - id: T1078.004
+              name: Cloud Accounts
+              reference: "https://attack.mitre.org/techniques/T1078/004/"
+  timestamp_override: event.ingested
+  type: query
+  version: 1

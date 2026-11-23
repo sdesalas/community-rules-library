@@ -1,0 +1,64 @@
+id: b6ad174e-c7aa-5909-929e-57421912b524_1
+type: security-rule
+attributes:
+  author:
+    - Elastic Community
+  description: Identifies an IAM user creating an access key for a different user. Attackers create keys on other accounts to keep access if their first one is found.
+  from: now-9m
+  language: esql
+  license: Elastic License v2
+  name: AWS Access Key Created for Another IAM User
+  note: |
+    ## Triage and analysis
+
+    ### Investigating AWS Access Key Created for Another IAM User
+
+    ### Possible investigation steps
+
+    - Confirm the request with both users.
+    - Delete the key if it was not expected.
+
+    ### False positive analysis
+
+    - Admins issuing keys for service users. Exclude their accounts.
+  query: |
+    from logs-aws.cloudtrail-* metadata _id, _version, _index
+    | where event.provider == "iam.amazonaws.com" and event.action == "CreateAccessKey" and event.outcome == "success"
+    | dissect aws.cloudtrail.request_parameters "{%{?user_name_key}=%{Esql.target_user_name}}"
+    | where Esql.target_user_name is not null and Esql.target_user_name != user.name
+    | keep _id, _version, _index, @timestamp, event.*, user.*, source.*, cloud.*, aws.cloudtrail.user_identity.arn, Esql.target_user_name
+  related_integrations:
+    - integration: cloudtrail
+      package: aws
+      version: ">=2.0.0"
+  risk_score: 47
+  rule_id: b6ad174e-c7aa-5909-929e-57421912b524
+  setup: |
+    ## Setup
+
+    This rule requires the AWS CloudTrail integration to be installed and collecting logs, with Amazon Bedrock API calls recorded in the trail.
+  severity: medium
+  tags:
+    - "Domain: Cloud"
+    - "Use Case: Threat Detection"
+    - "Tactic: Persistence"
+    - "Data Source: AWS"
+    - "Data Source: AWS CloudTrail"
+    - "Resources: Investigation Guide"
+    - "Source: Community"
+  threat:
+    - framework: MITRE ATT&CK
+      tactic:
+        id: TA0003
+        name: Persistence
+        reference: "https://attack.mitre.org/tactics/TA0003/"
+      technique:
+        - id: T1098
+          name: Account Manipulation
+          reference: "https://attack.mitre.org/techniques/T1098/"
+          subtechnique:
+            - id: T1098.001
+              name: Additional Cloud Credentials
+              reference: "https://attack.mitre.org/techniques/T1098/001/"
+  type: esql
+  version: 1

@@ -1,0 +1,62 @@
+id: b3008d8e-2402-516d-86e8-425caacf0ba5_1
+type: security-rule
+attributes:
+  author:
+    - Elastic Community
+  description: Identifies an EBS snapshot made public, which lets anyone copy the disk.
+  from: now-9m
+  index:
+    - "filebeat-*"
+    - "logs-aws.cloudtrail-*"
+  language: kuery
+  license: Elastic License v2
+  name: AWS EBS Snapshot Shared Publicly
+  note: |
+    ## Triage and analysis
+
+    ### Investigating AWS EBS Snapshot Shared Publicly
+
+    ### Possible investigation steps
+
+    - Make the snapshot private again.
+    - Check what data the disk held.
+
+    ### False positive analysis
+
+    - None expected.
+  query: |
+    event.dataset:aws.cloudtrail and event.provider:ec2.amazonaws.com and
+      event.action:ModifySnapshotAttribute and event.outcome:success and
+      aws.cloudtrail.request_parameters:*createVolumePermission* and aws.cloudtrail.request_parameters:*all*
+  related_integrations:
+    - integration: cloudtrail
+      package: aws
+      version: ">=2.0.0"
+  risk_score: 73
+  rule_id: b3008d8e-2402-516d-86e8-425caacf0ba5
+  setup: |
+    ## Setup
+
+    This rule requires the AWS CloudTrail integration to be installed and collecting logs, with Amazon Bedrock API calls recorded in the trail.
+  severity: high
+  tags:
+    - "Domain: Cloud"
+    - "Use Case: Threat Detection"
+    - "Tactic: Exfiltration"
+    - "Data Source: AWS"
+    - "Data Source: AWS CloudTrail"
+    - "Resources: Investigation Guide"
+    - "Source: Community"
+  threat:
+    - framework: MITRE ATT&CK
+      tactic:
+        id: TA0010
+        name: Exfiltration
+        reference: "https://attack.mitre.org/tactics/TA0010/"
+      technique:
+        - id: T1537
+          name: Transfer Data to Cloud Account
+          reference: "https://attack.mitre.org/techniques/T1537/"
+  timestamp_override: event.ingested
+  type: query
+  version: 1
