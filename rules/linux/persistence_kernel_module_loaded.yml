@@ -1,0 +1,72 @@
+id: f56717fc-5875-5951-a144-17905c78f656_1
+type: security-rule
+attributes:
+  author:
+    - Elastic Community
+  description: Identifies insmod loading a kernel module from a file. Rootkits load as kernel modules, and modules from outside the module folder are unusual.
+  from: now-9m
+  index:
+    - "logs-endpoint.events.process*"
+    - "auditbeat-*"
+    - "logs-auditd_manager.auditd-*"
+  language: eql
+  license: Elastic License v2
+  name: Kernel Module Loaded via Insmod
+  note: |
+    ## Triage and analysis
+
+    ### Investigating Kernel Module Loaded via Insmod
+
+    ### Possible investigation steps
+
+    - Check the module file's hash and origin.
+    - List loaded modules with `lsmod` and compare with a known good host.
+
+    ### False positive analysis
+
+    - Driver development on test hosts. Exclude those hosts.
+  query: |
+    process where host.os.type == "linux" and event.type == "start" and
+      event.action in ("exec", "exec_event", "start", "executed", "process_started") and
+      process.name == "insmod" and process.args like "*.ko*" and not process.args like "/lib/modules/*"
+  related_integrations:
+    - package: endpoint
+      version: ">=8.2.0"
+    - package: auditd_manager
+      version: ">=1.18.0"
+  risk_score: 73
+  rule_id: f56717fc-5875-5951-a144-17905c78f656
+  setup: |
+    ## Setup
+
+    This rule requires data coming in from Elastic Defend.
+
+    ### Elastic Defend Integration Setup
+    Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+  severity: high
+  tags:
+    - "Domain: Endpoint"
+    - "OS: Linux"
+    - "Use Case: Threat Detection"
+    - "Tactic: Persistence"
+    - "Data Source: Elastic Defend"
+    - "Data Source: Auditd Manager"
+    - "Resources: Investigation Guide"
+    - "Source: Community"
+  threat:
+    - framework: MITRE ATT&CK
+      tactic:
+        id: TA0003
+        name: Persistence
+        reference: "https://attack.mitre.org/tactics/TA0003/"
+      technique:
+        - id: T1547
+          name: Boot or Logon Autostart Execution
+          reference: "https://attack.mitre.org/techniques/T1547/"
+          subtechnique:
+            - id: T1547.006
+              name: Kernel Modules and Extensions
+              reference: "https://attack.mitre.org/techniques/T1547/006/"
+  timestamp_override: event.ingested
+  type: eql
+  version: 1

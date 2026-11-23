@@ -1,0 +1,75 @@
+id: b500357a-b401-558f-a3fe-f9d08ab24f4b_1
+type: security-rule
+attributes:
+  author:
+    - Elastic Community
+  description: Identifies the audit daemon being stopped or disabled through systemctl or service.
+  from: now-9m
+  index:
+    - "logs-endpoint.events.process*"
+    - "auditbeat-*"
+    - "logs-auditd_manager.auditd-*"
+  language: eql
+  license: Elastic License v2
+  name: Auditd Service Stopped or Disabled
+  note: |
+    ## Triage and analysis
+
+    ### Investigating Auditd Service Stopped or Disabled
+
+    ### Possible investigation steps
+
+    - Start auditd again.
+    - Review what happened on the host while it was off.
+
+    ### False positive analysis
+
+    - Maintenance windows. Confirm with the owner.
+  query: |
+    process where host.os.type == "linux" and event.type == "start" and
+      event.action in ("exec", "exec_event", "start", "executed", "process_started") and
+      (
+        (process.name == "systemctl" and process.args in ("stop", "disable", "mask") and process.args like "auditd*") or
+        (process.name == "service" and process.args == "auditd" and process.args == "stop")
+      )
+  related_integrations:
+    - package: endpoint
+      version: ">=8.2.0"
+    - package: auditd_manager
+      version: ">=1.18.0"
+  risk_score: 47
+  rule_id: b500357a-b401-558f-a3fe-f9d08ab24f4b
+  setup: |
+    ## Setup
+
+    This rule requires data coming in from Elastic Defend.
+
+    ### Elastic Defend Integration Setup
+    Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+  severity: medium
+  tags:
+    - "Domain: Endpoint"
+    - "OS: Linux"
+    - "Use Case: Threat Detection"
+    - "Tactic: Defense Evasion"
+    - "Data Source: Elastic Defend"
+    - "Data Source: Auditd Manager"
+    - "Resources: Investigation Guide"
+    - "Source: Community"
+  threat:
+    - framework: MITRE ATT&CK
+      tactic:
+        id: TA0005
+        name: Defense Evasion
+        reference: "https://attack.mitre.org/tactics/TA0005/"
+      technique:
+        - id: T1562
+          name: Impair Defenses
+          reference: "https://attack.mitre.org/techniques/T1562/"
+          subtechnique:
+            - id: T1562.012
+              name: Disable or Modify Linux Audit System
+              reference: "https://attack.mitre.org/techniques/T1562/012/"
+  timestamp_override: event.ingested
+  type: eql
+  version: 1
